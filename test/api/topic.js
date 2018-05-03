@@ -2012,6 +2012,7 @@ suite('Users', function () {
             var topicStatusNew = Topic.STATUSES.inProgress;
             var topicVisibilityNew = Topic.VISIBILITY.public;
             var topicEndsAtNew = new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000);
+            var topicEndsAtNewInPast = new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
 
             var user;
             var topic;
@@ -2033,6 +2034,38 @@ suite('Users', function () {
             });
 
             test('Success', function (done) {
+                db
+                .query('UPDATE "Topics" \
+                    SET "endsAt" =:endsAt \
+                    WHERE id = :topicId;\
+                ', {
+                    replacements: {
+                        topicId: topic.id,
+                        endsAt: topicEndsAtNewInPast
+                    },
+                    type: db.QueryTypes.UPDATE
+                }).then(function () {
+                    topicUpdate(agent, user.id, topic.id, topicStatusNew, topicVisibilityNew, null, topicEndsAtNewInPast, null, function (err) {
+                        if (err) return done(err);
+    
+                        topicRead(agent, user.id, topic.id, null, function (err, res) {
+                            if (err) return done(err);
+    
+                            var topicNew = res.body.data;
+    
+                            assert.equal(topicNew.status, topicStatusNew);
+                            assert.equal(topicNew.visibility, topicVisibilityNew);
+                            assert.equalTime(new Date(topicNew.endsAt), topicEndsAtNew);
+    
+                            done();
+                        });
+                    });
+                }).catch(function (err) {
+                    done(err);
+                });
+            });
+
+            test('Success - with endsAt new', function (done) {
                 topicUpdate(agent, user.id, topic.id, topicStatusNew, topicVisibilityNew, null, topicEndsAtNew, null, function (err) {
                     if (err) return done(err);
 

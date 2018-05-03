@@ -1229,6 +1229,7 @@ module.exports = function (app) {
         var contact = req.body.contact; // TODO: This logic is specific to Rahvaalgatus.ee, with next Partner we have to make it more generic - https://trello.com/c/Sj3XRF5V/353-raa-ee-followup-email-to-riigikogu-and-token-access-to-events-api
         var statusNew = req.body.status;
         var endsAt = req.body.endsAt;
+        console.log(req.body);
 
         var isBackToVoting = false;
         var isSendToParliament = false;
@@ -1308,8 +1309,11 @@ module.exports = function (app) {
             })
             .spread(function (topic, vote) {
                 var fields = ['visibility', 'status', 'categories', 'endsAt', 'hashtag'];
-                if (topic.endsAt === endsAt) {
-                    delete topic.endsAt;
+                var skip = [];
+                if (topic.endsAt === endsAt || endsAt === undefined) {
+                    console.log('ENDSAT', topic.endsAt, endsAt);
+                    fields.splice(3,1);
+                    delete topic.dataValues.endsAt;
                 }
                 
                 return db
@@ -1400,6 +1404,8 @@ module.exports = function (app) {
                         }
 
                         return Promise.resolve();
+                    }).catch(function (err){
+                        console.log(err);
                     });
             });
     };
